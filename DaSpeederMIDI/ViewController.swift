@@ -16,6 +16,7 @@ class ViewController: NSViewController {
     private let rampCheckbox = NSButton(checkboxWithTitle: "Ramp", target: nil, action: nil)
     private let rampSlider = NSSlider(value: 0.3, minValue: 0.1, maxValue: 1.0, target: nil, action: nil)
     private let rampLabel = NSTextField(labelWithString: "0.3s")
+    private let volLabel = NSTextField(labelWithString: "Vol:")
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -28,36 +29,18 @@ class ViewController: NSViewController {
     }
 
     private func setupUI() {
-        let stack = NSStackView()
-        stack.orientation = .vertical
-        stack.spacing = 12
-        stack.alignment = .centerX
-        stack.distribution = .fill
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        stack.edgeInsets = NSEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
+        let pad: CGFloat = 16
+        let spacing: CGFloat = 8
 
         fileLabel.alignment = .center
         fileLabel.font = .systemFont(ofSize: 14, weight: .medium)
+        fileLabel.translatesAutoresizingMaskIntoConstraints = false
 
         speedLabel.alignment = .center
         speedLabel.font = .monospacedSystemFont(ofSize: 13, weight: .regular)
+        speedLabel.translatesAutoresizingMaskIntoConstraints = false
 
         dropView.translatesAutoresizingMaskIntoConstraints = false
-
-        volumeLabel.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
-        rampLabel.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
-        rampSlider.widthAnchor.constraint(greaterThanOrEqualToConstant: 80).isActive = true
-
-        let controlsRow = NSStackView(views: [playButton, loopCheckbox, NSTextField(labelWithString: "Vol:"), volumeSlider, volumeLabel, rampCheckbox, rampSlider, rampLabel])
-        controlsRow.spacing = 12
-
-        volumeSlider.widthAnchor.constraint(greaterThanOrEqualToConstant: 100).isActive = true
-
-        let keyboardView = KeyboardView(onNoteOn: { [weak self] note in
-            self?.audioEngine.handleNote(note)
-        })
-        let hostingView = NSHostingView(rootView: keyboardView)
-        hostingView.translatesAutoresizingMaskIntoConstraints = false
 
         let waveformHost = NSHostingView(rootView: AnyView(EmptyView()))
         waveformHost.translatesAutoresizingMaskIntoConstraints = false
@@ -66,9 +49,49 @@ class ViewController: NSViewController {
 
         let dropContainer = NSView()
         dropContainer.translatesAutoresizingMaskIntoConstraints = false
+        dropContainer.wantsLayer = true
+        dropContainer.layer?.masksToBounds = true
         dropContainer.addSubview(dropView)
         dropContainer.addSubview(waveformHost)
+
+        // Controls row
+        let controls = [playButton, loopCheckbox, volLabel, volumeSlider, volumeLabel, rampCheckbox, rampSlider, rampLabel] as [NSView]
+        let controlsRow = NSView()
+        controlsRow.translatesAutoresizingMaskIntoConstraints = false
+        volumeLabel.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
+        rampLabel.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
+        for c in controls {
+            c.translatesAutoresizingMaskIntoConstraints = false
+            controlsRow.addSubview(c)
+            c.centerYAnchor.constraint(equalTo: controlsRow.centerYAnchor).isActive = true
+        }
+
+        // Keyboard
+        let keyboardView = KeyboardView(onNoteOn: { [weak self] note in
+            self?.audioEngine.handleNote(note)
+        })
+        let keyboardHost = NSHostingView(rootView: keyboardView)
+        keyboardHost.translatesAutoresizingMaskIntoConstraints = false
+
+        view.addSubview(fileLabel)
+        view.addSubview(dropContainer)
+        view.addSubview(speedLabel)
+        view.addSubview(controlsRow)
+        view.addSubview(keyboardHost)
+
         NSLayoutConstraint.activate([
+            // File label
+            fileLabel.topAnchor.constraint(equalTo: view.topAnchor, constant: pad),
+            fileLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: pad),
+            fileLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -pad),
+
+            // Drop container — takes all available space
+            dropContainer.topAnchor.constraint(equalTo: fileLabel.bottomAnchor, constant: spacing),
+            dropContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: pad),
+            dropContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -pad),
+            dropContainer.heightAnchor.constraint(greaterThanOrEqualToConstant: 80),
+
+            // Drop view & waveform fill container
             dropView.topAnchor.constraint(equalTo: dropContainer.topAnchor),
             dropView.bottomAnchor.constraint(equalTo: dropContainer.bottomAnchor),
             dropView.leadingAnchor.constraint(equalTo: dropContainer.leadingAnchor),
@@ -77,24 +100,37 @@ class ViewController: NSViewController {
             waveformHost.bottomAnchor.constraint(equalTo: dropContainer.bottomAnchor),
             waveformHost.leadingAnchor.constraint(equalTo: dropContainer.leadingAnchor),
             waveformHost.trailingAnchor.constraint(equalTo: dropContainer.trailingAnchor),
-        ])
 
-        stack.addArrangedSubview(fileLabel)
-        stack.addArrangedSubview(dropContainer)
-        stack.addArrangedSubview(speedLabel)
-        stack.addArrangedSubview(controlsRow)
-        stack.addArrangedSubview(hostingView)
+            // Speed label
+            speedLabel.topAnchor.constraint(equalTo: dropContainer.bottomAnchor, constant: spacing),
+            speedLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: pad),
+            speedLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -pad),
 
-        view.addSubview(stack)
-        NSLayoutConstraint.activate([
-            stack.topAnchor.constraint(equalTo: view.topAnchor),
-            stack.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            stack.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            stack.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            dropContainer.heightAnchor.constraint(greaterThanOrEqualToConstant: 120),
-            dropContainer.widthAnchor.constraint(equalTo: stack.widthAnchor, constant: -32),
-            hostingView.heightAnchor.constraint(equalToConstant: 120),
-            hostingView.widthAnchor.constraint(equalTo: stack.widthAnchor, constant: -32),
+            // Controls row
+            controlsRow.topAnchor.constraint(equalTo: speedLabel.bottomAnchor, constant: spacing),
+            controlsRow.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: pad),
+            controlsRow.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -pad),
+            controlsRow.heightAnchor.constraint(equalToConstant: 24),
+
+            // Controls horizontal layout
+            playButton.leadingAnchor.constraint(equalTo: controlsRow.leadingAnchor),
+            loopCheckbox.leadingAnchor.constraint(equalTo: playButton.trailingAnchor, constant: 8),
+            volLabel.leadingAnchor.constraint(equalTo: loopCheckbox.trailingAnchor, constant: 12),
+            volumeSlider.leadingAnchor.constraint(equalTo: volLabel.trailingAnchor, constant: 4),
+            volumeSlider.widthAnchor.constraint(greaterThanOrEqualToConstant: 80),
+            volumeLabel.leadingAnchor.constraint(equalTo: volumeSlider.trailingAnchor, constant: 4),
+            rampCheckbox.leadingAnchor.constraint(equalTo: volumeLabel.trailingAnchor, constant: 12),
+            rampSlider.leadingAnchor.constraint(equalTo: rampCheckbox.trailingAnchor, constant: 4),
+            rampSlider.widthAnchor.constraint(greaterThanOrEqualToConstant: 60),
+            rampLabel.leadingAnchor.constraint(equalTo: rampSlider.trailingAnchor, constant: 4),
+            rampLabel.trailingAnchor.constraint(lessThanOrEqualTo: controlsRow.trailingAnchor),
+
+            // Keyboard — fixed height at bottom
+            keyboardHost.topAnchor.constraint(equalTo: controlsRow.bottomAnchor, constant: spacing),
+            keyboardHost.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            keyboardHost.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            keyboardHost.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            keyboardHost.heightAnchor.constraint(equalToConstant: 120),
         ])
     }
 
