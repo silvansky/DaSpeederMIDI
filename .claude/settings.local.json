@@ -8,7 +8,10 @@
       "Bash(swift package:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(python3:*)",
+      "Bash(sips:*)",
+      "Bash(rsvg-convert:*)"
     ]
   }
 }
