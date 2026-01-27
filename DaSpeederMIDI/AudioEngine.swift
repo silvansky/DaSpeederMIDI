@@ -42,8 +42,7 @@ class AudioEngine {
     }
 
     func loadFile(url: URL) throws {
-        let file = try AVAudioFile(forReading: url)
-        player.file = file
+        try player.load(url: url, buffered: true)
         fileLoaded = true
         player.completionHandler = { [weak self] in
             DispatchQueue.main.async { self?.onPlaybackEnd?() }
