@@ -1,0 +1,42 @@
+{
+  "originHash" : "1a2e85412f65448c26a1967a8b0f652c37c10176bcc1741b4672767a06e6e47c",
+  "pins" : [
+    {
+      "identity" : "audiokit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/AudioKit/AudioKit.git",
+      "state" : {
+        "revision" : "5b3fd238ef8ee95c9842ca4ea83ca58ee151e630",
+        "version" : "5.6.5"
+      }
+    },
+    {
+      "identity" : "keyboard",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/AudioKit/Keyboard.git",
+      "state" : {
+        "revision" : "c0752677c602eec2f97ec50825581608bc56dac6",
+        "version" : "1.4.1"
+      }
+    },
+    {
+      "identity" : "tonic",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/AudioKit/Tonic.git",
+      "state" : {
+        "revision" : "227c89ea047f928787bec571e487239547f21fe6",
+        "version" : "2.1.0"
+      }
+    },
+    {
+      "identity" : "waveform",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/AudioKit/Waveform.git",
+      "state" : {
+        "revision" : "79103e766434eb32aff9f0b169a469fce0af9ebd",
+        "version" : "1.0.2"
+      }
+    }
+  ],
+  "version" : 3
+}

@@ -6,6 +6,12 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		A3A919322F28CE9B00EF1E33 /* AudioKit in Frameworks */ = {isa = PBXBuildFile; productRef = A3A919312F28CE9B00EF1E33 /* AudioKit */; };
+		A3A919352F28CFA100EF1E33 /* Keyboard in Frameworks */ = {isa = PBXBuildFile; productRef = A3A919342F28CFA100EF1E33 /* Keyboard */; };
+		A3A9193E2F28D88E00EF1E33 /* Waveform in Frameworks */ = {isa = PBXBuildFile; productRef = A3A9193D2F28D88E00EF1E33 /* Waveform */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		A3A9191F2F28CE6F00EF1E33 /* DaSpeederMIDI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DaSpeederMIDI.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -23,6 +29,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A3A919322F28CE9B00EF1E33 /* AudioKit in Frameworks */,
+				A3A9193E2F28D88E00EF1E33 /* Waveform in Frameworks */,
+				A3A919352F28CFA100EF1E33 /* Keyboard in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -65,6 +74,9 @@
 			);
 			name = DaSpeederMIDI;
 			packageProductDependencies = (
+				A3A919312F28CE9B00EF1E33 /* AudioKit */,
+				A3A919342F28CFA100EF1E33 /* Keyboard */,
+				A3A9193D2F28D88E00EF1E33 /* Waveform */,
 			);
 			productName = DaSpeederMIDI;
 			productReference = A3A9191F2F28CE6F00EF1E33 /* DaSpeederMIDI.app */;
@@ -94,6 +106,11 @@
 			);
 			mainGroup = A3A919162F28CE6F00EF1E33;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				A3A919302F28CE9B00EF1E33 /* XCRemoteSwiftPackageReference "AudioKit" */,
+				A3A919332F28CFA100EF1E33 /* XCRemoteSwiftPackageReference "Keyboard" */,
+				A3A9193C2F28D88E00EF1E33 /* XCRemoteSwiftPackageReference "Waveform" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = A3A919202F28CE6F00EF1E33 /* Products */;
 			projectDirPath = "";
@@ -333,6 +350,51 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		A3A919302F28CE9B00EF1E33 /* XCRemoteSwiftPackageReference "AudioKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/AudioKit/AudioKit.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.6.5;
+			};
+		};
+		A3A919332F28CFA100EF1E33 /* XCRemoteSwiftPackageReference "Keyboard" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/AudioKit/Keyboard.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.4.1;
+			};
+		};
+		A3A9193C2F28D88E00EF1E33 /* XCRemoteSwiftPackageReference "Waveform" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/AudioKit/Waveform.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.2;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A3A919312F28CE9B00EF1E33 /* AudioKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A3A919302F28CE9B00EF1E33 /* XCRemoteSwiftPackageReference "AudioKit" */;
+			productName = AudioKit;
+		};
+		A3A919342F28CFA100EF1E33 /* Keyboard */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A3A919332F28CFA100EF1E33 /* XCRemoteSwiftPackageReference "Keyboard" */;
+			productName = Keyboard;
+		};
+		A3A9193D2F28D88E00EF1E33 /* Waveform */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A3A9193C2F28D88E00EF1E33 /* XCRemoteSwiftPackageReference "Waveform" */;
+			productName = Waveform;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = A3A919172F28CE6F00EF1E33 /* Project object */;
 }
