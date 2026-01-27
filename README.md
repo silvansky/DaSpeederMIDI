@@ -47,4 +47,4 @@ Intermediate semitones follow `2^((note - 60) / 12)`.
 
 ## License
 
-All rights reserved.
+[MIT](LICENSE)
