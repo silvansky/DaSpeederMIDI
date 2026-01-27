@@ -12,6 +12,9 @@ class ViewController: NSViewController {
     private let volumeSlider = NSSlider(value: 1.0, minValue: 0, maxValue: 1, target: nil, action: nil)
     private let dropView = DropView()
     private var waveformHostingView: NSHostingView<AnyView>?
+    private let rampCheckbox = NSButton(checkboxWithTitle: "Ramp", target: nil, action: nil)
+    private let rampSlider = NSSlider(value: 0.3, minValue: 0.1, maxValue: 1.0, target: nil, action: nil)
+    private let rampLabel = NSTextField(labelWithString: "0.3s")
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -40,7 +43,10 @@ class ViewController: NSViewController {
 
         dropView.translatesAutoresizingMaskIntoConstraints = false
 
-        let controlsRow = NSStackView(views: [playButton, loopCheckbox, NSTextField(labelWithString: "Vol:"), volumeSlider])
+        rampLabel.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
+        rampSlider.widthAnchor.constraint(greaterThanOrEqualToConstant: 80).isActive = true
+
+        let controlsRow = NSStackView(views: [playButton, loopCheckbox, NSTextField(labelWithString: "Vol:"), volumeSlider, rampCheckbox, rampSlider, rampLabel])
         controlsRow.spacing = 12
 
         volumeSlider.widthAnchor.constraint(greaterThanOrEqualToConstant: 100).isActive = true
@@ -113,6 +119,12 @@ class ViewController: NSViewController {
 
         volumeSlider.target = self
         volumeSlider.action = #selector(volumeChanged)
+
+        rampCheckbox.target = self
+        rampCheckbox.action = #selector(toggleRamp)
+
+        rampSlider.target = self
+        rampSlider.action = #selector(rampDurationChanged)
     }
 
     private func loadFile(_ url: URL) {
@@ -166,5 +178,14 @@ class ViewController: NSViewController {
 
     @objc private func volumeChanged() {
         audioEngine.volume = volumeSlider.floatValue
+    }
+
+    @objc private func toggleRamp() {
+        audioEngine.rampEnabled = rampCheckbox.state == .on
+    }
+
+    @objc private func rampDurationChanged() {
+        audioEngine.rampDuration = rampSlider.floatValue
+        rampLabel.stringValue = String(format: "%.1fs", rampSlider.floatValue)
     }
 }

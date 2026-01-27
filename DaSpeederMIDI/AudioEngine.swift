@@ -25,6 +25,13 @@ class AudioEngine {
     private(set) var currentSpeed: Float = 1.0
     private var fileLoaded = false
 
+    var rampEnabled = false
+    var rampDuration: Float = 0.3
+    private var rampTimer: Timer?
+    private var rampStart: Float = 1.0
+    private var rampTarget: Float = 1.0
+    private var rampStartTime: CFAbsoluteTime = 0
+
     init() {
         variSpeed = VariSpeed(player)
         engine.output = variSpeed
@@ -66,8 +73,29 @@ class AudioEngine {
     func handleNote(_ note: UInt8) {
         currentNote = note
         let speed = pow(2.0, Float(Int(note) - 60) / 12.0)
-        setSpeed(speed)
-        onSpeedChange?(currentSpeed, note)
+        if rampEnabled {
+            rampTo(speed)
+        } else {
+            setSpeed(speed)
+        }
+        onSpeedChange?(speed.clamped(to: 0.25...4.0), note)
+    }
+
+    private func rampTo(_ target: Float) {
+        rampTimer?.invalidate()
+        rampStart = currentSpeed
+        rampTarget = target.clamped(to: 0.25...4.0)
+        rampStartTime = CFAbsoluteTimeGetCurrent()
+        let interval: TimeInterval = 1.0 / 60.0
+        rampTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] timer in
+            guard let self else { timer.invalidate(); return }
+            let elapsed = Float(CFAbsoluteTimeGetCurrent() - self.rampStartTime)
+            let t = min(elapsed / self.rampDuration, 1.0)
+            let speed = self.rampStart + (self.rampTarget - self.rampStart) * t
+            self.setSpeed(speed)
+            self.onSpeedChange?(self.currentSpeed, self.currentNote)
+            if t >= 1.0 { timer.invalidate(); self.rampTimer = nil }
+        }
     }
 
     var hasFile: Bool { fileLoaded }
