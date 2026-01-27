@@ -32,6 +32,9 @@ class AudioEngine {
     private var rampTarget: Float = 1.0
     private var rampStartTime: CFAbsoluteTime = 0
 
+    private var recorder: NodeRecorder?
+    var isRecording: Bool { recorder?.isRecording ?? false }
+
     init() {
         variSpeed = VariSpeed(player)
         engine.output = variSpeed
@@ -96,6 +99,18 @@ class AudioEngine {
             self.onSpeedChange?(self.currentSpeed, self.currentNote)
             if t >= 1.0 { timer.invalidate(); self.rampTimer = nil }
         }
+    }
+
+    func startRecording() throws {
+        recorder = try NodeRecorder(node: variSpeed, shouldCleanupRecordings: false)
+        try recorder?.record()
+    }
+
+    func stopRecording() -> AVAudioFile? {
+        recorder?.stop()
+        let file = recorder?.audioFile
+        recorder = nil
+        return file
     }
 
     var hasFile: Bool { fileLoaded }

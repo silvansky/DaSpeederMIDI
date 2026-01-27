@@ -17,6 +17,7 @@ class ViewController: NSViewController {
     private let rampSlider = NSSlider(value: 0.3, minValue: 0.1, maxValue: 1.0, target: nil, action: nil)
     private let rampLabel = NSTextField(labelWithString: "0.3s")
     private let volLabel = NSTextField(labelWithString: "Vol:")
+    private let recordButton = NSButton(title: "Record", target: nil, action: nil)
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -55,7 +56,7 @@ class ViewController: NSViewController {
         dropContainer.addSubview(waveformHost)
 
         // Controls row
-        let controls = [playButton, loopCheckbox, volLabel, volumeSlider, volumeLabel, rampCheckbox, rampSlider, rampLabel] as [NSView]
+        let controls = [playButton, recordButton, loopCheckbox, volLabel, volumeSlider, volumeLabel, rampCheckbox, rampSlider, rampLabel] as [NSView]
         let controlsRow = NSView()
         controlsRow.translatesAutoresizingMaskIntoConstraints = false
         volumeLabel.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
@@ -114,7 +115,8 @@ class ViewController: NSViewController {
 
             // Controls horizontal layout
             playButton.leadingAnchor.constraint(equalTo: controlsRow.leadingAnchor),
-            loopCheckbox.leadingAnchor.constraint(equalTo: playButton.trailingAnchor, constant: 8),
+            recordButton.leadingAnchor.constraint(equalTo: playButton.trailingAnchor, constant: 8),
+            loopCheckbox.leadingAnchor.constraint(equalTo: recordButton.trailingAnchor, constant: 8),
             volLabel.leadingAnchor.constraint(equalTo: loopCheckbox.trailingAnchor, constant: 12),
             volumeSlider.leadingAnchor.constraint(equalTo: volLabel.trailingAnchor, constant: 4),
             volumeSlider.widthAnchor.constraint(greaterThanOrEqualToConstant: 80),
@@ -163,6 +165,9 @@ class ViewController: NSViewController {
 
         rampSlider.target = self
         rampSlider.action = #selector(rampDurationChanged)
+
+        recordButton.target = self
+        recordButton.action = #selector(toggleRecord)
     }
 
     private func loadFile(_ url: URL) {
@@ -226,5 +231,60 @@ class ViewController: NSViewController {
     @objc private func rampDurationChanged() {
         audioEngine.rampDuration = rampSlider.floatValue
         rampLabel.stringValue = String(format: "%.1fs", rampSlider.floatValue)
+    }
+
+    @objc private func toggleRecord() {
+        if audioEngine.isRecording {
+            guard let file = audioEngine.stopRecording() else {
+                recordButton.title = "Record"
+                return
+            }
+            recordButton.title = "Record"
+            presentSaveDialog(for: file)
+        } else {
+            do {
+                try audioEngine.startRecording()
+                recordButton.title = "Stop Rec"
+            } catch {
+                fileLabel.stringValue = "Record error: \(error.localizedDescription)"
+            }
+        }
+    }
+
+    private func presentSaveDialog(for file: AVAudioFile) {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
+        let defaultName = "DaSpeeder_recording_\(formatter.string(from: Date())).wav"
+
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = defaultName
+        panel.allowedContentTypes = [.wav]
+        panel.beginSheetModal(for: view.window!) { response in
+            guard response == .OK, let url = panel.url else { return }
+            self.exportToWAV(source: file, destination: url)
+        }
+    }
+
+    private func exportToWAV(source: AVAudioFile, destination: URL) {
+        do {
+            let format = source.processingFormat
+            let wavSettings: [String: Any] = [
+                AVFormatIDKey: kAudioFormatLinearPCM,
+                AVSampleRateKey: format.sampleRate,
+                AVNumberOfChannelsKey: format.channelCount,
+                AVLinearPCMBitDepthKey: 16,
+                AVLinearPCMIsFloatKey: false,
+                AVLinearPCMIsBigEndianKey: false,
+                AVLinearPCMIsNonInterleaved: false,
+            ]
+            let outputFile = try AVAudioFile(forWriting: destination, settings: wavSettings)
+            let buffer = AVAudioPCMBuffer(pcmFormat: source.processingFormat, frameCapacity: AVAudioFrameCount(source.length))!
+            try source.read(into: buffer)
+            try outputFile.write(from: buffer)
+        } catch {
+            DispatchQueue.main.async {
+                self.fileLabel.stringValue = "Export error: \(error.localizedDescription)"
+            }
+        }
     }
 }
