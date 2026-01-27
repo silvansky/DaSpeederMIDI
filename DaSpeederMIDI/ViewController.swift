@@ -9,9 +9,10 @@ class ViewController: NSViewController {
     private let speedLabel = NSTextField(labelWithString: "Speed: 1.00x (C4)")
     private let playButton = NSButton(title: "Play", target: nil, action: nil)
     private let loopCheckbox = NSButton(checkboxWithTitle: "Loop", target: nil, action: nil)
-    private let volumeSlider = NSSlider(value: 1.0, minValue: 0, maxValue: 1, target: nil, action: nil)
+    private let volumeSlider = NSSlider(value: 1.0, minValue: 0, maxValue: 4, target: nil, action: nil)
     private let dropView = DropView()
     private var waveformHostingView: NSHostingView<AnyView>?
+    private let volumeLabel = NSTextField(labelWithString: "1.00")
     private let rampCheckbox = NSButton(checkboxWithTitle: "Ramp", target: nil, action: nil)
     private let rampSlider = NSSlider(value: 0.3, minValue: 0.1, maxValue: 1.0, target: nil, action: nil)
     private let rampLabel = NSTextField(labelWithString: "0.3s")
@@ -43,10 +44,11 @@ class ViewController: NSViewController {
 
         dropView.translatesAutoresizingMaskIntoConstraints = false
 
+        volumeLabel.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
         rampLabel.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
         rampSlider.widthAnchor.constraint(greaterThanOrEqualToConstant: 80).isActive = true
 
-        let controlsRow = NSStackView(views: [playButton, loopCheckbox, NSTextField(labelWithString: "Vol:"), volumeSlider, rampCheckbox, rampSlider, rampLabel])
+        let controlsRow = NSStackView(views: [playButton, loopCheckbox, NSTextField(labelWithString: "Vol:"), volumeSlider, volumeLabel, rampCheckbox, rampSlider, rampLabel])
         controlsRow.spacing = 12
 
         volumeSlider.widthAnchor.constraint(greaterThanOrEqualToConstant: 100).isActive = true
@@ -178,6 +180,7 @@ class ViewController: NSViewController {
 
     @objc private func volumeChanged() {
         audioEngine.volume = volumeSlider.floatValue
+        volumeLabel.stringValue = String(format: "%.2f", volumeSlider.floatValue)
     }
 
     @objc private func toggleRamp() {
