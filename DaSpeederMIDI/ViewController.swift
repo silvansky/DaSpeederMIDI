@@ -1,5 +1,7 @@
 import Cocoa
 import SwiftUI
+import Waveform
+import AVFoundation
 
 class ViewController: NSViewController {
     private let audioEngine = AudioEngine()
@@ -9,6 +11,7 @@ class ViewController: NSViewController {
     private let loopCheckbox = NSButton(checkboxWithTitle: "Loop", target: nil, action: nil)
     private let volumeSlider = NSSlider(value: 1.0, minValue: 0, maxValue: 1, target: nil, action: nil)
     private let dropView = DropView()
+    private var waveformHostingView: NSHostingView<AnyView>?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -48,8 +51,28 @@ class ViewController: NSViewController {
         let hostingView = NSHostingView(rootView: keyboardView)
         hostingView.translatesAutoresizingMaskIntoConstraints = false
 
+        let waveformHost = NSHostingView(rootView: AnyView(EmptyView()))
+        waveformHost.translatesAutoresizingMaskIntoConstraints = false
+        waveformHost.isHidden = true
+        self.waveformHostingView = waveformHost
+
+        let dropContainer = NSView()
+        dropContainer.translatesAutoresizingMaskIntoConstraints = false
+        dropContainer.addSubview(dropView)
+        dropContainer.addSubview(waveformHost)
+        NSLayoutConstraint.activate([
+            dropView.topAnchor.constraint(equalTo: dropContainer.topAnchor),
+            dropView.bottomAnchor.constraint(equalTo: dropContainer.bottomAnchor),
+            dropView.leadingAnchor.constraint(equalTo: dropContainer.leadingAnchor),
+            dropView.trailingAnchor.constraint(equalTo: dropContainer.trailingAnchor),
+            waveformHost.topAnchor.constraint(equalTo: dropContainer.topAnchor),
+            waveformHost.bottomAnchor.constraint(equalTo: dropContainer.bottomAnchor),
+            waveformHost.leadingAnchor.constraint(equalTo: dropContainer.leadingAnchor),
+            waveformHost.trailingAnchor.constraint(equalTo: dropContainer.trailingAnchor),
+        ])
+
         stack.addArrangedSubview(fileLabel)
-        stack.addArrangedSubview(dropView)
+        stack.addArrangedSubview(dropContainer)
         stack.addArrangedSubview(speedLabel)
         stack.addArrangedSubview(controlsRow)
         stack.addArrangedSubview(hostingView)
@@ -60,8 +83,8 @@ class ViewController: NSViewController {
             stack.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             stack.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             stack.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            dropView.heightAnchor.constraint(greaterThanOrEqualToConstant: 120),
-            dropView.widthAnchor.constraint(equalTo: stack.widthAnchor, constant: -32),
+            dropContainer.heightAnchor.constraint(greaterThanOrEqualToConstant: 120),
+            dropContainer.widthAnchor.constraint(equalTo: stack.widthAnchor, constant: -32),
             hostingView.heightAnchor.constraint(equalToConstant: 120),
             hostingView.widthAnchor.constraint(equalTo: stack.widthAnchor, constant: -32),
         ])
@@ -96,12 +119,24 @@ class ViewController: NSViewController {
         do {
             try audioEngine.loadFile(url: url)
             fileLabel.stringValue = url.lastPathComponent
+            showWaveform(url: url)
             updatePlayButton()
             audioEngine.play()
             updatePlayButton()
         } catch {
             fileLabel.stringValue = "Error: \(error.localizedDescription)"
         }
+    }
+
+    private func showWaveform(url: URL) {
+        guard let file = try? AVAudioFile(forReading: url),
+              let channelData = file.floatChannelData(),
+              let samples = channelData.first else { return }
+        let buffer = SampleBuffer(samples: samples)
+        let waveform = Waveform(samples: buffer)
+            .foregroundColor(.accentColor)
+        waveformHostingView?.rootView = AnyView(waveform)
+        waveformHostingView?.isHidden = false
     }
 
     private func updateSpeedLabel(speed: Float, note: UInt8) {
