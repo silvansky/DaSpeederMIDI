@@ -26,6 +26,9 @@ class ViewController: NSViewController {
     private let volumeLabel1 = NSTextField(labelWithString: "1.00")
     private let volumeLabel2 = NSTextField(labelWithString: "1.00")
 
+    private let spinner1 = NSProgressIndicator()
+    private let spinner2 = NSProgressIndicator()
+
     private let recordButton = NSButton(title: "Record", target: nil, action: nil)
     private let rampCheckbox = NSButton(checkboxWithTitle: "Ramp", target: nil, action: nil)
     private let rampSlider = NSSlider(value: 0.3, minValue: 0.1, maxValue: 1.0, target: nil, action: nil)
@@ -68,8 +71,8 @@ class ViewController: NSViewController {
         wh2.isHidden = true
         waveformHost2 = wh2
 
-        let dropContainer1 = makeDropContainer(dropView: dropView1, waveformHost: wh1)
-        let dropContainer2 = makeDropContainer(dropView: dropView2, waveformHost: wh2)
+        let dropContainer1 = makeDropContainer(dropView: dropView1, waveformHost: wh1, spinner: spinner1)
+        let dropContainer2 = makeDropContainer(dropView: dropView2, waveformHost: wh2, spinner: spinner2)
 
         let controlsRow1 = makeControlsRow(playButton: playButton1, loopCheckbox: loopCheckbox1, reverseCheckbox: reverseCheckbox1, volumeSlider: volumeSlider1, volumeLabel: volumeLabel1)
         let controlsRow2 = makeControlsRow(playButton: playButton2, loopCheckbox: loopCheckbox2, reverseCheckbox: reverseCheckbox2, volumeSlider: volumeSlider2, volumeLabel: volumeLabel2)
@@ -159,13 +162,19 @@ class ViewController: NSViewController {
         ])
     }
 
-    private func makeDropContainer(dropView: DropView, waveformHost: NSHostingView<AnyView>) -> NSView {
+    private func makeDropContainer(dropView: DropView, waveformHost: NSHostingView<AnyView>, spinner: NSProgressIndicator) -> NSView {
         let container = NSView()
         container.translatesAutoresizingMaskIntoConstraints = false
         container.wantsLayer = true
         container.layer?.masksToBounds = true
         container.addSubview(dropView)
         container.addSubview(waveformHost)
+
+        spinner.style = .spinning
+        spinner.isIndeterminate = true
+        spinner.translatesAutoresizingMaskIntoConstraints = false
+        spinner.isHidden = true
+        container.addSubview(spinner)
 
         NSLayoutConstraint.activate([
             dropView.topAnchor.constraint(equalTo: container.topAnchor),
@@ -176,6 +185,8 @@ class ViewController: NSViewController {
             waveformHost.bottomAnchor.constraint(equalTo: container.bottomAnchor),
             waveformHost.leadingAnchor.constraint(equalTo: container.leadingAnchor),
             waveformHost.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            spinner.centerXAnchor.constraint(equalTo: container.centerXAnchor),
+            spinner.centerYAnchor.constraint(equalTo: container.centerYAnchor),
         ])
         return container
     }
@@ -254,25 +265,48 @@ class ViewController: NSViewController {
     }
 
     private func loadFile(_ url: URL, player: Int) {
-        do {
-            try audioEngine.loadFile(url: url, player: player)
-            let label = player == 0 ? fileLabel1 : fileLabel2
-            let waveformHost = player == 0 ? waveformHost1 : waveformHost2
-            label.stringValue = "Player \(player + 1) — \(url.lastPathComponent)"
-            showWaveform(url: url, host: waveformHost)
-            updatePlayButtons()
-            audioEngine.play(player: player)
-            updatePlayButtons()
-        } catch {
-            let label = player == 0 ? fileLabel1 : fileLabel2
-            label.stringValue = "Error: \(error.localizedDescription)"
+        let label = player == 0 ? fileLabel1 : fileLabel2
+        let spinner = player == 0 ? spinner1 : spinner2
+        let waveformHost = player == 0 ? waveformHost1 : waveformHost2
+
+        label.stringValue = "Player \(player + 1) — Loading…"
+        spinner.isHidden = false
+        spinner.startAnimation(nil)
+
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let self else { return }
+            do {
+                try self.audioEngine.loadFile(url: url, player: player)
+                let samples = Self.readSamples(url: url)
+                DispatchQueue.main.async {
+                    spinner.stopAnimation(nil)
+                    spinner.isHidden = true
+                    label.stringValue = "Player \(player + 1) — \(url.lastPathComponent)"
+                    if let samples {
+                        self.showWaveform(samples: samples, url: url, host: waveformHost)
+                    }
+                    self.updatePlayButtons()
+                    self.audioEngine.play(player: player)
+                    self.updatePlayButtons()
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    spinner.stopAnimation(nil)
+                    spinner.isHidden = true
+                    label.stringValue = "Error: \(error.localizedDescription)"
+                }
+            }
         }
     }
 
-    private func showWaveform(url: URL, host: NSHostingView<AnyView>?) {
+    private static func readSamples(url: URL) -> [Float]? {
         guard let file = try? AVAudioFile(forReading: url),
               let channelData = file.floatChannelData(),
-              let samples = channelData.first else { return }
+              let samples = channelData.first else { return nil }
+        return samples
+    }
+
+    private func showWaveform(samples: [Float], url: URL, host: NSHostingView<AnyView>?) {
         let buffer = SampleBuffer(samples: samples)
         let waveform = Waveform(samples: buffer)
             .foregroundColor(.accentColor)
