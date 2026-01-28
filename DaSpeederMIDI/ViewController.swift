@@ -274,7 +274,9 @@ class ViewController: NSViewController {
               let channelData = file.floatChannelData(),
               let samples = channelData.first else { return }
         let buffer = SampleBuffer(samples: samples)
-        let waveform = Waveform(samples: buffer).foregroundColor(.accentColor)
+        let waveform = Waveform(samples: buffer)
+            .foregroundColor(.accentColor)
+            .id(url)
         host?.rootView = AnyView(waveform)
         host?.isHidden = false
     }
