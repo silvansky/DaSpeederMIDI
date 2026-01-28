@@ -3,27 +3,16 @@ import AVFoundation
 
 class AudioEngine {
     private let engine = AudioKit.AudioEngine()
-    private let player = AudioPlayer()
+    private let players = [AudioPlayer(), AudioPlayer()]
+    private let mixer: Mixer
     private let variSpeed: VariSpeed
     private let midi = MIDI()
 
     var onSpeedChange: ((Float, UInt8) -> Void)?
-    var onPlaybackEnd: (() -> Void)?
+    var onPlaybackEnd: ((Int) -> Void)?
 
-    var isLooping: Bool {
-        get { player.isLooping }
-        set { player.isLooping = newValue }
-    }
-
-    var volume: Float {
-        get { Float(player.volume) }
-        set { player.volume = AUValue(newValue) }
-    }
-
-    var isPlaying: Bool { player.isPlaying }
     private(set) var currentNote: UInt8 = 60
     private(set) var currentSpeed: Float = 1.0
-    private var fileLoaded = false
 
     var rampEnabled = false
     var rampDuration: Float = 0.3
@@ -36,7 +25,8 @@ class AudioEngine {
     var isRecording: Bool { recorder?.isRecording ?? false }
 
     init() {
-        variSpeed = VariSpeed(player)
+        mixer = Mixer(players)
+        variSpeed = VariSpeed(mixer)
         engine.output = variSpeed
         midi.addListener(MIDIHandler(engine: self))
     }
@@ -51,21 +41,47 @@ class AudioEngine {
         midi.closeAllInputs()
     }
 
-    func loadFile(url: URL) throws {
-        try player.load(url: url, buffered: true)
-        fileLoaded = true
-        player.completionHandler = { [weak self] in
-            DispatchQueue.main.async { self?.onPlaybackEnd?() }
+    func loadFile(url: URL, player: Int) throws {
+        guard (0...1).contains(player) else { return }
+        try players[player].load(url: url, buffered: true)
+        players[player].completionHandler = { [weak self] in
+            DispatchQueue.main.async { self?.onPlaybackEnd?(player) }
         }
     }
 
-    func play() {
-        guard fileLoaded else { return }
-        player.play()
+    func play(player: Int) {
+        guard (0...1).contains(player), hasFile(player: player) else { return }
+        players[player].play()
     }
 
-    func stopPlayback() {
-        player.stop()
+    func stopPlayback(player: Int) {
+        guard (0...1).contains(player) else { return }
+        players[player].stop()
+    }
+
+    func setVolume(_ volume: Float, player: Int) {
+        guard (0...1).contains(player) else { return }
+        players[player].volume = AUValue(volume)
+    }
+
+    func setLooping(_ looping: Bool, player: Int) {
+        guard (0...1).contains(player) else { return }
+        players[player].isLooping = looping
+    }
+
+    func setReversed(_ reversed: Bool, player: Int) {
+        guard (0...1).contains(player) else { return }
+        players[player].isReversed = reversed
+    }
+
+    func hasFile(player: Int) -> Bool {
+        guard (0...1).contains(player) else { return false }
+        return players[player].file != nil
+    }
+
+    func isPlaying(player: Int) -> Bool {
+        guard (0...1).contains(player) else { return false }
+        return players[player].isPlaying
     }
 
     func setSpeed(_ speed: Float) {
@@ -112,8 +128,6 @@ class AudioEngine {
         recorder = nil
         return file
     }
-
-    var hasFile: Bool { fileLoaded }
 }
 
 private extension Float {
